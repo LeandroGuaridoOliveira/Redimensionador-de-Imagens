@@ -1,0 +1,2 @@
+# automacao_imagens_redimensionar
+automação para construmarket
