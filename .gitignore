@@ -1,0 +1,11 @@
+# Ignorar pastas de saída e logs
+logs/
+images/
+*.webp
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.gif
+*.zip
+*.rar
