@@ -1,7 +1,9 @@
 import tkinter as tk
+import tkinter.ttk as ttk
 from tkinter import messagebox, filedialog, Listbox, font, END
 from PIL import Image, ImageTk
 import os
+import tqdm
 import logging
 import zipfile
 import subprocess
@@ -90,8 +92,6 @@ def on_double_click(event):
         if not selected_files:
             zip_button.config(state="disabled")
     
-
-# processa cada imagem selecionada, redimensionando e salvando em pastas separadas.
 def process_images():
     if not selected_files:
         messagebox.showwarning("Aviso", "Nenhuma imagem selecionada para redimensionar")
@@ -105,7 +105,13 @@ def process_images():
 
     processed = []
 
-    for image_path in selected_files:
+    progress_bar = ttk.Progressbar(root, orient="horizontal", length=200, mode="determinate")
+    progress_bar.pack(pady=10)
+
+    progress_label = tk.Label(root, text="Processing images...")
+    progress_label.pack()
+
+    for i, image_path in enumerate(selected_files):
         nome_arquivo = os.path.basename(image_path)
         nome_produto = os.path.splitext(nome_arquivo)[0]
         pasta_produto = os.path.join(output_dir, nome_produto)
@@ -149,6 +155,10 @@ def process_images():
         except Exception as e:
             logging.error(f"Erro ao processar '{nome_arquivo}': {e}")
 
+        progress_bar['value'] = (i + 1) / len(selected_files) * 100
+        progress_label['text'] = f"Processing image {i + 1} of {len(selected_files)}"
+        root.update_idletasks()
+
     # Atualiza interface e exibe mensagem
     messagebox.showinfo("Sucesso", "Todas as imagens foram redimensionadas com sucesso!")
     listbox.delete(0, END)
@@ -158,7 +168,9 @@ def process_images():
     if processed:
         zip_button.config(state="normal")
 
-
+    progress_bar.pack_forget()
+    progress_label.pack_forget()
+    
 def mostrar_miniatura(event):
     global preview_popup, preview_image
 
@@ -196,9 +208,7 @@ def mostrar_miniatura(event):
 
 
 
-#esconde a miniatura ao tirar o mouse do item da lista
 def esconder_miniatura(event):
-
     global preview_popup
     if preview_popup:
         preview_popup.destroy()
