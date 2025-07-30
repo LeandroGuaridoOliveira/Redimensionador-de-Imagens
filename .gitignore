@@ -1,6 +1,4 @@
 # Ignorar pastas de saída e logs
-logs/
-images/
 *.webp
 *.jpg
 *.jpeg
@@ -9,3 +7,9 @@ images/
 *.gif
 *.zip
 *.rar
+catchPosition.py
+bugs/
+Imagens Redimensionadas/
+Automacao Fotos IA/
+logs/
+images/
