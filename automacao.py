@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, filedialog, Listbox, font, END
-from PIL import Image
+from PIL import Image, ImageTk
 import os
 import logging
 import zipfile
@@ -31,6 +31,12 @@ webp_quality = 100  # Qualidade da imagem WebP (máxima)
 
 # lista global para armazenar caminhos dos arquivos selecionados
 selected_files = []
+
+
+#Variaveis globais para a pré-visualização
+
+preview_frame = None
+preview_popup = None
 
 
 # abre o seletor de arquivos para escolher imagens(evita duplicatas na lista)
@@ -65,8 +71,7 @@ def select_images():
         if not selected_files:
             listbox.delete(0, END)
             zip_button.config(state="disabled")
-
-
+    
 # remove imagem da lista ao dar duplo clique.
 def on_double_click(event):
 
@@ -84,6 +89,7 @@ def on_double_click(event):
 
         if not selected_files:
             zip_button.config(state="disabled")
+    
 
 # processa cada imagem selecionada, redimensionando e salvando em pastas separadas.
 def process_images():
@@ -152,8 +158,55 @@ def process_images():
     if processed:
         zip_button.config(state="normal")
 
-# cria um arquivo .zip com todas as imagens redimensionadas nas suas respectivas pastas.
 
+def mostrar_miniatura(event):
+    global preview_popup, preview_image
+
+    index = listbox.nearest(event.y)
+    bbox = listbox.bbox(index)
+
+    # Verifica se o mouse está realmente sobre o item
+    if not bbox or not (bbox[1] <= event.y <= bbox[1] + bbox[3]):
+        if preview_popup:
+            preview_popup.destroy()
+            preview_popup = None
+        return
+
+    nome_arquivo = listbox.get(index)
+    caminho = next((f for f in selected_files if os.path.basename(f) == nome_arquivo), None)
+    if not caminho or not os.path.exists(caminho):
+        return
+
+    try:
+        img = Image.open(caminho).convert("RGB")
+        img.thumbnail((150, 150))
+        preview_image = ImageTk.PhotoImage(img)
+
+        if preview_popup:
+            preview_popup.destroy()
+
+        preview_popup = tk.Toplevel(root)
+        preview_popup.overrideredirect(True)
+        preview_popup.geometry(f"+{event.x_root + 20}+{event.y_root + 20}")
+        lbl = tk.Label(preview_popup, image=preview_image, borderwidth=2, relief="solid")
+        lbl.image = preview_image
+        lbl.pack()
+    except Exception as e:
+        logging.error(f"Erro ao mostrar miniatura: {e}")
+
+
+
+#esconde a miniatura ao tirar o mouse do item da lista
+def esconder_miniatura(event):
+
+    global preview_popup
+    if preview_popup:
+        preview_popup.destroy()
+        preview_popup = None
+
+
+
+# cria um arquivo .zip com todas as imagens redimensionadas nas suas respectivas pastas.
 def download_zip():
     zip_path = filedialog.asksaveasfilename(
         defaultextension=".zip",
@@ -235,9 +288,16 @@ tk.Label(frame, text="Imagens selecionadas:", bg="#f0f0f0").pack(pady=(10, 0), f
 frame_lista = tk.Frame(frame, bg="#f0f0f0")
 frame_lista.pack(fill="both", expand=True)
 
+# Frame para pré visualizacao de miniaturas
+preview_frame = tk.Frame(frame_lista, bg="#f0f0f0")
+preview_frame.pack(fill="x",pady=(5,10))
+
 listbox = Listbox(frame_lista, height=8, justify="center")
 listbox.pack(pady=5, fill="both", expand=True)
 listbox.bind("<Double-Button-1>", on_double_click)
+listbox.bind("<Motion>", mostrar_miniatura)
+listbox.bind("<Leave>", esconder_miniatura)
+
 
 # Botão de limpar lista (X) – deixado como estava
 tk.Button(frame_lista, text="X", command=clear_all, width=3, bg="#D32F2F", fg="white", font=("Helvetica", 12, "bold")).pack(anchor="center", pady=(0, 10))
